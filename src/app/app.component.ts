@@ -7,4 +7,13 @@ import { Component } from '@angular/core';
 })
 export class AppComponent {
   title = 'ChuckJokesApp';
+
+  jocks_list = ['Adult jokes','Dad jokes','Christmas Jokes','Job Jokes','Birthday Jokes','Social Jokes','Puns']
+
+  searchJokes:any
+
+  isDetailsView:boolean = true
+  viewDetails(){
+    this.isDetailsView = !this.isDetailsView
+  }
 }
