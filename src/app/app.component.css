@@ -154,6 +154,9 @@
     outline: none;
     transition: 0.3s ease-in-out;
 }
+.search_box input:focus{
+    background-color: #ffffff;
+}
 .search_box input:hover{
     background-color: #ffffff;
 }
@@ -535,6 +538,7 @@ footer h3{
     background-color: #ffffff;
     padding-right: 10px;
     z-index: 9;
+    text-transform: capitalize;
 }
 .jokes_details_box_title span{
     width: 100%;

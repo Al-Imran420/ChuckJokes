@@ -54,11 +54,14 @@
         <input 
           type="text" 
           placeholder="How can we make you laugh today?"
-          [(ngModel)]="searchJokes">
+          [(ngModel)]="searchJokes"
+          (keyup)="getAllJokesSearch()">
         <i class="las la-search"></i>
         <div class="search_box_autocomplete_box" *ngIf="searchJokes">
           <ul class="search_box_autocomplete">
-            <li *ngFor="let jock of jocks_list"> {{jock}}: The Crazy Teacher </li>
+            <li *ngFor="let joke of searchJokesList" (click)="viewDetails(joke.categories)"> 
+              {{joke.categories.length > 0 ? joke.categories[0]:'Uncategorized'}} : {{(joke.value?.length>25)?(joke.value | slice:0:25)+' ...':(joke.value)}} 
+            </li>
           </ul>
         </div>
       </div>
@@ -69,75 +72,92 @@
   <div class="slide" [ngClass]="isDetailsView?'transform_left_default':'transform_left'">
     <div class="container">
       <div class="row">
-        <div class="grid_5 margin_bottom_15" *ngFor="let jocks of jocks_list">
-          <button class="filter_button">{{jocks}}</button>
+        <div class="grid_5 margin_bottom_15" *ngFor="let jocks of categories">
+          <button (click)="viewByCategorie(jocks)" class="filter_button">{{jocks}}</button>
         </div>
         <div class="grid_5 margin_bottom_15">
-          <button class="all_button">View All <i class="las la-arrow-down"></i></button>
+          <button (click)="getAllJokes()" class="all_button">View All <i class="las la-arrow-down"></i></button>
         </div>
       </div>
       <div class="body_title">
-        <span>Social Jokes</span>
+        <span>{{title}}</span>
       </div>
+      <h1 *ngIf="isLoading">Loading ...</h1>
       <div class="row">
-        <div class="grid_3 margin_bottom_15">
+        <div class="grid_3 margin_bottom_15" *ngFor="let joke of pagedItems">
           <div class="jokes_box">
-            <h3> <img src="../assets/images/yellow-light.png" alt=""> Test Jokes </h3>
+            <h3> <img src="../assets/images/yellow-light.png" alt=""> 
+              {{joke.categories.length > 0 ? joke.categories[0]:'Uncategorized'}} 
+            </h3>
             <p>
-              Lorem, ipsum dolor sit amet consectetur adipisicing elit. Aut dolores quae maiores nam temporibus, ipsum alias modi fugiat error obcaecati maxime impedit sit perspiciatis aspernatur dolorem saepe provident, dolore iste.
+              {{(joke.value?.length>100)?(joke.value | slice:0:100)+' ...':(joke.value)}}
             </p>
-            <button class="red_more" (click)="viewDetails()">See Stats <i class="las la-arrow-right"></i></button>
+            <button class="red_more" (click)="viewDetails(joke.categories)">See Stats <i class="las la-arrow-right"></i></button>
           </div>
         </div>
-        <div class="grid_3">
-          <div class="jokes_box">
-            <h3> <img src="../assets/images/yellow-light.png" alt=""> Test Jokes </h3>
-            <p>
-              Lorem, ipsum dolor sit amet consectetur adipisicing elit. Aut dolores quae maiores nam temporibus, ipsum alias modi fugiat error obcaecati maxime impedit sit perspiciatis aspernatur dolorem saepe provident, dolore iste.
-            </p>
-            <button class="red_more" (click)="viewDetails()">See Stats <i class="las la-arrow-right"></i></button>
-          </div>
-        </div>
+      </div>
+    </div>
+    <!-- Pagination -->
+    <div class="container">
+      <div class="pagination_area">
+          <nav aria-label="Page navigation example">
+              <ul *ngIf="pager.pages && pager.pages.length" class="pagination justify-content-center">
+                  <li [ngClass]="{disabled:pager.currentPage === 1}">
+                      <a (click)="setPage(pager.currentPage - 1)" class="page-link">Previous</a>
+                  </li>
+                  <li *ngFor="let page of pager.pages" [ngClass]="{active_pager:pager.currentPage === page}">
+                      <a (click)="setPage(page)" class="page-link">{{page}}</a>
+                  </li>
+                  <li>
+                      <span>... {{pager.totalPages}}</span>
+                  </li>
+                  <li [ngClass]="{disabled:pager.currentPage === pager.totalPages}">
+                      <a (click)="setPage(pager.currentPage + 1)" class="page-link">Next</a>
+                  </li>
+              </ul>
+          </nav>
       </div>
     </div>
   </div>
   <div class="slide" [ngClass]="isDetailsView?'transform_right':'transform_right_default'">
     <div class="container">
       <div class="details_header">
-        <button (click)="viewDetails()"><i class="las la-angle-left"></i></button>
+        <button (click)="back()"><i class="las la-angle-left"></i></button>
       </div>
       <div class="row">
         <div class="grid_66 margin_bottom_15">
           <div class="jokes_details_box">
             <ul class="jokes_details_box_header">
-              <li class="category_title"> <span></span> Social Jokes</li>
-              <li class="popular_tag"> <span></span> Popular</li>
-              <li class="trending_tag"> <span></span> Trending</li>
-              <li class="epic_tag"> <span></span> Epic</li>
+              <li class="category_title"> <span></span> {{jokesDetails?.categories[0]}}</li>
+              <li class="popular_tag" *ngIf="like >=0 && like<10"> <span></span> Popular</li>
+              <li class="trending_tag" *ngIf="like >=10 && like<20"> <span></span> Trending</li>
+              <li class="epic_tag" *ngIf="like >=20"> <span></span> Epic</li>
             </ul>
             <div class="jokes_details_box_title">
-              <h1>The Granny Joke</h1>
+              <h1>
+                {{jokesDetails?.categories.length > 0 ? jokesDetails?.categories[0]:'Uncategorized'}} 
+              </h1>
               <span></span>
               <h5>No #1</h5>
             </div>
             <p> 
-              Lorem ipsum dolor sit, amet consectetur adipisicing elit. Asperiores accusamus tenetur, suscipit veniam voluptatem ipsa quo amet laboriosam blanditiis minima quam laudantium, et impedit sequi quos! Cupiditate accusamus similique fugit.
+              {{jokesDetails?.value}}
             </p>
           </div>
           <div class="jokes_details_footer">
             <ul class="like_dislike">
               <li>
-                <button class="like_bg"> <img src="../assets/images/like.png" alt=""> </button>
-                <span class="like_color">320</span>
+                <button class="like_bg" (click)="addLike()"> <img src="../assets/images/like.png" alt=""> </button>
+                <span class="like_color">{{like}}</span>
               </li>
               <li>
-                <button class="dislike_bg"> <img src="../assets/images/dis_like.png" alt=""> </button>
-                <span class="dislike_color">20</span>
+                <button class="dislike_bg" (click)="addDisLike()"> <img src="../assets/images/dis_like.png" alt=""> </button>
+                <span class="dislike_color">{{dislike}}</span>
               </li>
             </ul>
             <ul class="next_previous">
-              <li class="previous_btn"> <i class="las la-angle-left"></i> Prev. Joke </li>
-              <li class="next_btn"> Next Joke <i class="las la-angle-right"></i></li>
+              <li class="previous_btn" (click)="randomJokeView(jokesDetails?.categories[0])"> <i class="las la-angle-left"></i> Prev. Joke </li>
+              <li class="next_btn" (click)="randomJokeView(jokesDetails?.categories[0])"> Next Joke <i class="las la-angle-right"></i></li>
             </ul>
           </div>
         </div>
@@ -162,8 +182,6 @@
     </div>
   </div>
 </section>
-
-
 
 <footer>
   <div class="container">
